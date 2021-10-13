@@ -1,7 +1,7 @@
 # Arduino Projects
 
- + [`NeoPixels/`](NeoPixels/README.md): Controller for NeoPixel-based lighting
-   circuit for secret room.
+ + [`NeoPixels/`](NeoPixels/): Controller for NeoPixel-based lighting circuit
+   for secret room.
 
 ----------
 
