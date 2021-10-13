@@ -118,18 +118,23 @@ void loop() {
             break;
         }
         // --------------------------------------------------------------------
-        // Error reading or unrecognised state
-        // TODO: If we got here by default, current_state is meaningless
-        // Then won't necessarily trigger break code on state change
-        // Maybe keep these separate
-        // And have default as a simple wait and try again
+        // Error reading pin, or...
         case modes::ERROR :
+        // Invalid state. We *really* shouldn't end up in a mode outside the
+        // enumerated set.
+        // In both cases use lights to make it obvious! Then retry
         default : {
             // Nice bright red
             const uint32_t colour = neopixels::strip.gamma32(
                 neopixels::strip.Color(255, 0, 0, 50)
             );
-            neopixels::constant_colour(colour);
+            // Fill directly rather than entering a subfunction
+            // We don't want to wait for a switch to change if we don't trust
+            // what we are reading or how we got here
+            neopixels::strip.fill(colour);
+            neopixels::strip.show();
+            // And pause to see if that helps
+            delay(250);
             break;
         }
         // --------------------------------------------------------------------
