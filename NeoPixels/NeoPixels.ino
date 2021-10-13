@@ -103,22 +103,18 @@ void loop() {
     switch (current_mode) {
         // --------------------------------------------------------------------
         case modes::BRIGHT_WHITE : {
-            //const uint32_t colour = strip.Color(0, 0, 0, strip.gamma8(255));
             const uint32_t colour = neopixels::strip.gamma32(
                 neopixels::strip.Color(0, 0, 0, 255)
             );
             neopixels::constant_colour(colour);
-            //neopixels::constant_colour(
-            //    neopixels::strip.gamma32(neopixels::strip.Color(0, 0, 0, 255))
-            //    strip.Color(0, 0, 0, strip.gamma8(255))
-            //);
             break;
         }
         // --------------------------------------------------------------------
         case modes::DIM_WHITE : {
-            neopixels::constant_colour(
-                neopixels::strip.gamma32(neopixels::strip.Color(0, 0, 0, 100))
+            const uint32_t colour = neopixels::strip.gamma32(
+                neopixels::strip.Color(0, 0, 0, 100)
             );
+            neopixels::constant_colour(colour);
             break;
         }
         // --------------------------------------------------------------------
@@ -171,7 +167,6 @@ modes mode_switch::read_mode() {
     // And now test if we are in range of each step one by one
     for (uint8_t i = 0; i < (n_stops - 1); ++i) {
         // Calculate voltage halfway between this stop and the next
-        //const int threshold = (1023 * (2 * i + 1)) / (2 * (n_stops - 1));
         const int threshold = (2 * i + 1) * delta;
         // If we are below this, we're done
         // This is safe as we test in ascending order (and error for voltage<0)
