@@ -42,7 +42,10 @@ namespace neopixels {
     constexpr uint8_t brightness = 200;  // Max: 255
 
     // Declare the NeoPixel strip object
-    Adafruit_NeoPixel strip(n_leds, pin, NEO_RGBW + NEO_KHZ800);
+    // Note that this set of NeoPixels have a non-standard colour wiring
+    // See e.g. the Adafruit NeoPixel Überguide
+    // https://learn.adafruit.com/adafruit-neopixel-uberguide/arduino-library-use
+    Adafruit_NeoPixel strip(n_leds, pin, NEO_GRBW + NEO_KHZ800);
 }
 
 namespace mode_switch {
