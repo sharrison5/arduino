@@ -76,8 +76,20 @@ namespace mode_switch {
     modes read_mode();
 }
 
+// Functions to control lights -- all loop until switch changes
 namespace neopixels {
     void constant_colour(const uint32_t colour);
+
+    // Loops through the colour wheel (i.e. HSV)
+    // Possible to change speed via `hue_step_size`, and create transitions
+    // between adjacent LEDs via `phase_offset`
+    void rainbow(
+        const uint16_t hue_step_size = 16,
+        const uint16_t phase_offset = 0,
+        const uint8_t white = 0,
+        const uint8_t saturation = UINT8_MAX,
+        const uint8_t value = UINT8_MAX
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -118,6 +130,36 @@ void loop() {
                 neopixels::strip.Color(0, 0, 0, UINT8_MAX / 2)
             );
             neopixels::constant_colour(colour);
+            break;
+        }
+        // --------------------------------------------------------------------
+        // Nice slow fade with all colours in sync, as well as a large amount
+        // of background white for pastel shades
+        case modes::PASTEL_RAINBOW : {
+            const uint16_t hue_step_size = 4;
+            const uint16_t phase_offset = 0;
+            const uint8_t white = 2 * (UINT8_MAX / 3);
+            neopixels::rainbow(hue_step_size, phase_offset, white);
+            break;
+        }
+        // --------------------------------------------------------------------
+        // Spread the colour wheel across all LEDs, so seems to slowly move
+        // around the room. Small amount of white to smooth intensity
+        // differences as hue changes.
+        case modes::ROLLING_RAINBOW : {
+            const uint16_t hue_step_size = 64;
+            const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds;
+            const uint8_t white = UINT8_MAX / 4;
+            neopixels::rainbow(hue_step_size, phase_offset, white);
+            break;
+        }
+        // --------------------------------------------------------------------
+        // Full rainbow rolls around each ring simultaneously
+        case modes::ROLLING_RAINBOW_RING : {
+            const uint16_t hue_step_size = 256;
+            const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds_per_ring;
+            const uint8_t white = 0;
+            neopixels::rainbow(hue_step_size, phase_offset, white);
             break;
         }
         // --------------------------------------------------------------------
@@ -205,6 +247,54 @@ void neopixels::constant_colour(const uint32_t colour) {
             break;
         }
         delay(100);
+    }
+
+    return;
+}
+
+// ----------------------------------------------------------------------------
+
+// Loop through colour wheel (i.e. HSV)
+// Note the code below makes extensive use of unsigned integer rollover!
+void neopixels::rainbow(
+    const uint16_t hue_step_size,
+    const uint16_t phase_offset,
+    const uint8_t white,
+    const uint8_t saturation,
+    const uint8_t value
+) {
+    // This is the reference that steadily increases
+    // LEDs may be offset relative to this to make apparent motion
+    uint16_t base_hue = 0;
+
+    // Loop indefinitely until switch changes
+    while (true) {
+        // Fill each LED with its colour
+        for (uint8_t n = 0; n < n_leds; ++n) {
+            // Combine base hue with LED offsets and any baseline white
+            const uint16_t hue = base_hue + n * phase_offset;
+            const uint32_t colour = strip.gamma32(
+                strip.ColorHSV(hue, saturation, value)
+                | (static_cast<uint32_t>(white) << 24)  // See definition of `strip.Color()`
+            );
+            strip.setPixelColor(n, colour);
+        }
+        // And go!
+        strip.show();
+
+        // Now take a small step along the hue axis for next time
+        base_hue += hue_step_size;
+        // While we could have done this as an explicit loop through hues,
+        // it doesn't give us any more control
+        //for (uint16_t base_hue = 0; base_hue <= UINT16_MAX; ++base_hue) {
+        // Similarly, this runs slow enough that extra delays are unnecessary
+        //delay(100);
+
+        // Finally, check the switch and return control if mode has changed
+        const modes mode = mode_switch::read_mode();
+        if (mode != current_mode) {
+            break;
+        }
     }
 
     return;
