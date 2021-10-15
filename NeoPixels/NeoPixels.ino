@@ -107,7 +107,7 @@ void loop() {
         // --------------------------------------------------------------------
         case modes::BRIGHT_WHITE : {
             const uint32_t colour = neopixels::strip.gamma32(
-                neopixels::strip.Color(0, 0, 0, 255)
+                neopixels::strip.Color(0, 0, 0, UINT8_MAX)
             );
             neopixels::constant_colour(colour);
             break;
@@ -115,7 +115,7 @@ void loop() {
         // --------------------------------------------------------------------
         case modes::DIM_WHITE : {
             const uint32_t colour = neopixels::strip.gamma32(
-                neopixels::strip.Color(0, 0, 0, 100)
+                neopixels::strip.Color(0, 0, 0, UINT8_MAX / 2)
             );
             neopixels::constant_colour(colour);
             break;
@@ -129,7 +129,7 @@ void loop() {
         default : {
             // Nice bright red
             const uint32_t colour = neopixels::strip.gamma32(
-                neopixels::strip.Color(255, 0, 0, 50)
+                neopixels::strip.Color(UINT8_MAX, 0, 0, 0)
             );
             // Fill directly rather than entering a subfunction
             // We don't want to wait for a switch to change if we don't trust
@@ -173,13 +173,13 @@ modes mode_switch::read_mode() {
     // Cache half the distance between stops
     const uint16_t delta = UINT16_MAX / (2 * (n_stops - 1));
     // And now test if we are in range of each step one by one
-    for (uint8_t i = 0; i < (n_stops - 1); ++i) {
+    for (uint8_t n = 0; n < (n_stops - 1); ++n) {
         // Calculate voltage halfway between this stop and the next
-        const int threshold = (2 * i + 1) * delta;
+        const uint16_t threshold = (2 * n + 1) * delta;
         // If we are below this, we're done
         // This is safe as we test in ascending order (and error for voltage<0)
         if (value < threshold) {
-            return static_cast<modes>(i);
+            return static_cast<modes>(n);
         }
     }
     // And if we don't find a match we must be at the last stop
