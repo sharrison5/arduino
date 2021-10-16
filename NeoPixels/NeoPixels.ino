@@ -331,6 +331,18 @@ void neopixels::random(const uint16_t delay_ms) {
                     sq(::random(UINT8_MAX + 1)) / (2 * UINT8_MAX)
                 )
             );
+
+            // Alternative in HSV space
+            // Personal preference is for the RGB version
+            //const uint16_t hue = ::random(UINT16_MAX);
+            //const uint8_t saturation = UINT8_MAX;  // White desaturates
+            //const uint8_t value = sq(::random(UINT8_MAX + 1)) / UINT8_MAX;
+            //const uint8_t white = sq(::random(UINT8_MAX + 1)) / (2 * UINT8_MAX);
+            //const uint32_t colour = strip.gamma32(
+            //    strip.ColorHSV(hue, saturation, value)
+            //    | (static_cast<uint32_t>(white) << 24)  // See definition of `strip.Color()`
+            //);
+
             strip.setPixelColor(n, colour);
         }
         // And go!
