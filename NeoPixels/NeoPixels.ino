@@ -2,7 +2,7 @@
 
 // Circuit contains:
 //  + On/off switch
-//  + Eight-stop rotary switch, which can be read on an analogue pin
+//  + Eight-stop rotary switch, which can be read on an analog pin
 //  + Five 12-LED NeoPixel rings
 
 // ----------------------------------------------------------------------------
@@ -90,6 +90,9 @@ namespace neopixels {
         const uint8_t saturation = UINT8_MAX,
         const uint8_t value = UINT8_MAX
     );
+
+    // Random colours
+    void random(const uint16_t delay_ms);
 }
 
 // ----------------------------------------------------------------------------
@@ -100,6 +103,10 @@ void setup() {
     neopixels::strip.begin();  // Initialise NeoPixel strip object (REQUIRED)
     neopixels::strip.setBrightness(neopixels::brightness);
     neopixels::strip.show();  // Turn OFF all pixels ASAP
+
+    // Initialise random number generator
+    // Use signal on unconnected pin as seed
+    randomSeed(analogRead(A7));
 
     // Open serial port (speed in bits per second)
     //Serial.begin(9600);
@@ -160,6 +167,12 @@ void loop() {
             const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds_per_ring;
             const uint8_t white = 0;
             neopixels::rainbow(hue_step_size, phase_offset, white);
+            break;
+        }
+        // --------------------------------------------------------------------
+        case modes::RANDOM : {
+            const uint16_t delay_ms = 25;
+            neopixels::random(delay_ms);
             break;
         }
         // --------------------------------------------------------------------
@@ -295,6 +308,41 @@ void neopixels::rainbow(
         if (mode != current_mode) {
             break;
         }
+    }
+
+    return;
+}
+
+// ----------------------------------------------------------------------------
+
+void neopixels::random(const uint16_t delay_ms) {
+    // Loop indefinitely until switch changes
+    while (true) {
+        // Fill each LED with a random colour
+        for (uint8_t n = 0; n < n_leds; ++n) {
+            // Squaring the random variables gives a sparser distribution,
+            // which results in brighter colours (i.e. less whitish mixes)
+            const uint32_t colour = neopixels::strip.gamma32(
+                neopixels::strip.Color(
+                    //sq(sq(::random(UINT8_MAX)) / UINT8_MAX) / UINT8_MAX,
+                    sq(::random(UINT8_MAX + 1)) / UINT8_MAX,
+                    sq(::random(UINT8_MAX + 1)) / UINT8_MAX,
+                    sq(::random(UINT8_MAX + 1)) / UINT8_MAX,
+                    sq(::random(UINT8_MAX + 1)) / (2 * UINT8_MAX)
+                )
+            );
+            strip.setPixelColor(n, colour);
+        }
+        // And go!
+        strip.show();
+
+        // Finally, check the switch and return control if mode has changed
+        const modes mode = mode_switch::read_mode();
+        if (mode != current_mode) {
+            break;
+        }
+
+        delay(delay_ms);
     }
 
     return;
