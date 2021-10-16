@@ -78,6 +78,7 @@ namespace mode_switch {
 
 // Functions to control lights -- all loop until switch changes
 namespace neopixels {
+    // Simply display colour, checking mode switch intermittently
     void constant_colour(const uint32_t colour);
 
     // Loops through the colour wheel (i.e. HSV)
@@ -94,8 +95,18 @@ namespace neopixels {
     // Random colours (change `delay_ms` to set speed)
     void random(const uint16_t delay_ms);
 
-    // Cycles through RGB at fluctuating intensity
-    void pulsing_rgb(const uint16_t delay_ms, const uint8_t white = 0);
+    // Cycles through the colour wheel at fluctuating intensity
+    // Picks `n_colours`, evenly spaced by hue. By default, the first colour is
+    // centred on red (so any value of `n_colours` divisible by three will
+    // include green and blue). This can be changed using `hue_offset` if
+    // required. Similarly to other functions, the proportion of `white` and
+    // speed (`delay_ms`) can be changed as necessary too.
+    void pulsing_colours(
+        const uint8_t n_colours,
+        const uint16_t delay_ms,
+        const uint8_t white = 0,
+        const uint16_t hue_offset = 0
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -174,9 +185,9 @@ void loop() {
         }
         // --------------------------------------------------------------------
         case modes::PULSING_COLOURS : {
+            const uint8_t n_colours = 6;
             const uint16_t delay_ms = 10;
-            const uint8_t white = UINT8_MAX / 6;
-            neopixels::pulsing_rgb(delay_ms, white);
+            neopixels::pulsing_colours(n_colours, delay_ms);
             break;
         }
         // --------------------------------------------------------------------
@@ -374,25 +385,34 @@ void neopixels::random(const uint16_t delay_ms) {
 
 // ----------------------------------------------------------------------------
 
-// Cycles through RGB at fluctuating intensity
-void neopixels::pulsing_rgb(const uint16_t delay_ms, const uint8_t white) {
+// Cycles through the colour wheel at fluctuating intensity
+void neopixels::pulsing_colours(
+    const uint8_t n_colours,
+    const uint16_t delay_ms,
+    const uint8_t white = 0,
+    const uint16_t hue_offset = 0
+) {
 
     // Loop indefinitely until switch changes
     while (true) {
 
-        // Fill red/green/blue using bit shifts to pack colours programmatically
-        for (uint8_t rgb_index = 0; rgb_index < 3; ++rgb_index) {
-            const uint8_t bit_shift = 16 - 8 * rgb_index;
+        // Pick evenly spaced hues
+        for (uint8_t hue_index = 0; hue_index < n_colours; ++hue_index) {
+            const uint16_t hue =
+                hue_index * (UINT16_MAX / n_colours) + hue_offset;
 
             // Loop through a full cycle of a sine wave in intensity
             // This goes from 0 to 255 (i.e. rather than -1 to 1) in 256 steps
             // Minimum is at 270°, so 3/4 of a cycle
             const uint8_t offset = 3 * (UINT8_MAX / 4);
-            for (uint8_t phase = 20; phase <= (UINT8_MAX - 20); ++phase) {
-                // Transform intensity to a single colour
-                const uint8_t intensity = strip.sine8(phase + offset);
+            for (uint8_t phase = 25; phase <= (UINT8_MAX - 25); ++phase) {
+                // Transform hue & intensity (i.e. value) to a single colour
+                const uint8_t saturation = UINT8_MAX;
+                const uint8_t value = max(
+                    strip.sine8(phase + offset), UINT8_MAX / 16
+                );
                 const uint32_t colour = neopixels::strip.gamma32(
-                    (static_cast<uint32_t>(intensity) << bit_shift)
+                    strip.ColorHSV(hue, saturation, value)
                     | (static_cast<uint32_t>(white) << 24)  // See definition of `strip.Color()`
                 );
                 // Display the colour on all LEDs
