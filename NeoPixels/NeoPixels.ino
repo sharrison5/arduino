@@ -278,7 +278,7 @@ void neopixels::constant_colour(const uint32_t colour) {
     while (true) {
         const modes mode = mode_switch::read_mode();
         if (mode != current_mode) {
-            break;
+            return;
         }
         delay(100);
     }
@@ -327,7 +327,7 @@ void neopixels::rainbow(
         // Finally, check the switch and return control if mode has changed
         const modes mode = mode_switch::read_mode();
         if (mode != current_mode) {
-            break;
+            return;
         }
     }
 
@@ -373,7 +373,7 @@ void neopixels::random(const uint16_t delay_ms) {
         // Finally, check the switch and return control if mode has changed
         const modes mode = mode_switch::read_mode();
         if (mode != current_mode) {
-            break;
+            return;
         }
 
         // Pause to slow down effect
