@@ -388,7 +388,7 @@ void neopixels::pulsing_rgb(const uint16_t delay_ms, const uint8_t white) {
             // This goes from 0 to 255 (i.e. rather than -1 to 1) in 256 steps
             // Minimum is at 270°, so 3/4 of a cycle
             const uint8_t offset = 3 * (UINT8_MAX / 4);
-            for (uint16_t phase = 0; phase <= UINT8_MAX; ++phase) {
+            for (uint8_t phase = 20; phase <= (UINT8_MAX - 20); ++phase) {
                 // Transform intensity to a single colour
                 const uint8_t intensity = strip.sine8(phase + offset);
                 const uint32_t colour = neopixels::strip.gamma32(
