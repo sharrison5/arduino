@@ -91,8 +91,11 @@ namespace neopixels {
         const uint8_t value = UINT8_MAX
     );
 
-    // Random colours
+    // Random colours (change `delay_ms` to set speed)
     void random(const uint16_t delay_ms);
+
+    // Cycles through RGB at fluctuating intensity
+    void pulsing_rgb(const uint16_t delay_ms, const uint8_t white = 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -167,6 +170,13 @@ void loop() {
             const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds_per_ring;
             const uint8_t white = 0;
             neopixels::rainbow(hue_step_size, phase_offset, white);
+            break;
+        }
+        // --------------------------------------------------------------------
+        case modes::PULSING_COLOURS : {
+            const uint16_t delay_ms = 10;
+            const uint8_t white = UINT8_MAX / 6;
+            neopixels::pulsing_rgb(delay_ms, white);
             break;
         }
         // --------------------------------------------------------------------
@@ -315,6 +325,7 @@ void neopixels::rainbow(
 
 // ----------------------------------------------------------------------------
 
+// Random colours (change `delay_ms` to set speed)
 void neopixels::random(const uint16_t delay_ms) {
     // Loop indefinitely until switch changes
     while (true) {
@@ -354,7 +365,50 @@ void neopixels::random(const uint16_t delay_ms) {
             break;
         }
 
+        // Pause to slow down effect
         delay(delay_ms);
+    }
+
+    return;
+}
+
+// ----------------------------------------------------------------------------
+
+// Cycles through RGB at fluctuating intensity
+void neopixels::pulsing_rgb(const uint16_t delay_ms, const uint8_t white) {
+
+    // Loop indefinitely until switch changes
+    while (true) {
+
+        // Fill red/green/blue using bit shifts to pack colours programmatically
+        for (uint8_t rgb_index = 0; rgb_index < 3; ++rgb_index) {
+            const uint8_t bit_shift = 16 - 8 * rgb_index;
+
+            // Loop through a full cycle of a sine wave in intensity
+            // This goes from 0 to 255 (i.e. rather than -1 to 1) in 256 steps
+            // Minimum is at 270°, so 3/4 of a cycle
+            const uint8_t offset = 3 * (UINT8_MAX / 4);
+            for (uint16_t phase = 0; phase <= UINT8_MAX; ++phase) {
+                // Transform intensity to a single colour
+                const uint8_t intensity = strip.sine8(phase + offset);
+                const uint32_t colour = neopixels::strip.gamma32(
+                    (static_cast<uint32_t>(intensity) << bit_shift)
+                    | (static_cast<uint32_t>(white) << 24)  // See definition of `strip.Color()`
+                );
+                // Display the colour on all LEDs
+                strip.fill(colour);
+                strip.show();
+
+                // Finally, check the switch and return control if mode has changed
+                const modes mode = mode_switch::read_mode();
+                if (mode != current_mode) {
+                    return;
+                }
+
+                // Pause to slow down effect
+                delay(delay_ms);
+            }
+        }
     }
 
     return;
