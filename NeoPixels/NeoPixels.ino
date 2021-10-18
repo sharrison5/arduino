@@ -107,6 +107,15 @@ namespace neopixels {
         const uint8_t white = 0,
         const uint16_t hue_offset = 0
     );
+
+    // Set of dots chasing around the LEDs
+    // Possible to change `n_dots`, the length of the trail they leave behind
+    // them (`n_fade`) and speed (`delay_ms`).
+    void chasing_dots(
+        const uint8_t n_dots,
+        const uint8_t n_fade,
+        const uint16_t delay_ms
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -188,6 +197,14 @@ void loop() {
             const uint8_t n_colours = 6;
             const uint16_t delay_ms = 10;
             neopixels::pulsing_colours(n_colours, delay_ms);
+            break;
+        }
+        // --------------------------------------------------------------------
+        case modes::CHASING_DOTS : {
+                const uint8_t n_dots = 1;
+                const uint8_t n_fade = 17;
+                const uint16_t delay_ms = 50;
+            neopixels::chasing_dots(n_dots, n_fade, delay_ms);
             break;
         }
         // --------------------------------------------------------------------
@@ -392,7 +409,6 @@ void neopixels::pulsing_colours(
     const uint8_t white = 0,
     const uint16_t hue_offset = 0
 ) {
-
     // Loop indefinitely until switch changes
     while (true) {
 
@@ -434,4 +450,67 @@ void neopixels::pulsing_colours(
     return;
 }
 
+// ----------------------------------------------------------------------------
+
+// Set of dots chasing around the LEDs
+void neopixels::chasing_dots(
+    const uint8_t n_dots,
+    const uint8_t n_fade,
+    const uint16_t delay_ms
+) {
+    // Cache separations between dots
+    uint8_t offsets[n_dots];
+    for (uint8_t n = 0; n < n_dots; ++n) {
+        offsets[n] = n * (n_leds / n_dots);
+    }
+
+    // Loop indefinitely until switch changes
+    while (true) {
+        // Loop through starting positions
+        for (uint8_t position = 0; position < n_leds; ++position) {
+            // Start with everything off
+            strip.clear();
+
+            // Place dots
+            for (uint8_t n = 0; n < n_dots; ++n) {
+                // Place the dot itself
+                const uint8_t dot_position = (position + offsets[n]) % n_leds;
+                const uint32_t colour = neopixels::strip.gamma32(
+                    neopixels::strip.Color(0, 0, 0, UINT8_MAX)
+                );
+                strip.setPixelColor(dot_position, colour);
+
+                // Add fade strip
+                for (uint8_t n_f = 0; n_f < n_fade; n_f++) {
+                    // Wrap the tail around so we get a smooth transition from
+                    // the last to the first LED
+                    const uint8_t fade_position =
+                        (dot_position - (n_f + 1) + n_leds) % n_leds;
+                    // And work out how much fading to apply
+                    // `n_fade = 2` gives: | 1 | 2/3 | 1/3 | 0 | ...
+                    const uint8_t white =
+                        (n_fade - n_f) * (UINT8_MAX / (n_fade + 1));
+                    const uint32_t fade_colour = neopixels::strip.gamma32(
+                        neopixels::strip.Color(0, 0, 0, white)
+                    );
+                    strip.setPixelColor(fade_position, fade_colour);
+                }
+            }
+            // And go!
+            strip.show();
+
+            // Finally, check the switch and return control if mode has changed
+            const modes mode = mode_switch::read_mode();
+            if (mode != current_mode) {
+                return;
+            }
+
+            // Pause to slow down effect
+            delay(delay_ms);
+        }
+    }
+
+    return;
+
+}
 // ----------------------------------------------------------------------------
