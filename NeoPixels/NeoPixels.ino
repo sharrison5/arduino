@@ -68,9 +68,6 @@ enum class modes: uint8_t {
 // Initialise status: this will be overwritten immediately
 modes current_mode = modes::ERROR;
 
-// Useful other defintions
-enum class directions: uint8_t {FORWARDS, BACKWARDS};
-
 // ----------------------------------------------------------------------------
 // Function declarations
 
@@ -85,13 +82,12 @@ namespace neopixels {
     void constant_colour(const uint32_t colour);
 
     // Loops through the colour wheel (i.e. HSV)
-    // Possible to change speed and order via `hue_step_size` and `direction`,
-    // and create transitions between adjacent LEDs via `phase_offset`.
+    // Possible to change speed via `hue_step_size` and create transitions
+    // between adjacent LEDs via `phase_offset`.
     void rainbow(
         const uint16_t hue_step_size = 16,
         const uint16_t phase_offset = 0,
         const uint8_t white = 0,
-        const directions direction = directions::FORWARDS,
         const uint8_t saturation = UINT8_MAX,
         const uint8_t value = UINT8_MAX
     );
@@ -179,16 +175,12 @@ void loop() {
         // --------------------------------------------------------------------
         // Spread the colour wheel across all LEDs, so seems to slowly move
         // around the room. Small amount of white to smooth intensity
-        // differences as hue changes. Note that we cycle through hues
-        // backwards in time as this gives the illusion of movement forwards in
-        // space (like a treadmill going backwards).
+        // differences as hue changes.
         case modes::ROLLING_RAINBOW : {
             const uint16_t hue_step_size = 64;
             const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds;
             const uint8_t white = UINT8_MAX / 4;
-            neopixels::rainbow(
-                hue_step_size, phase_offset, white, directions::BACKWARDS
-            );
+            neopixels::rainbow(hue_step_size, phase_offset, white);
             break;
         }
         // --------------------------------------------------------------------
@@ -197,9 +189,7 @@ void loop() {
             const uint16_t hue_step_size = 256;
             const uint16_t phase_offset = UINT16_MAX / neopixels::n_leds_per_ring;
             const uint8_t white = 0;
-            neopixels::rainbow(
-                hue_step_size, phase_offset, white, directions::BACKWARDS
-            );
+            neopixels::rainbow(hue_step_size, phase_offset, white);
             break;
         }
         // --------------------------------------------------------------------
@@ -321,7 +311,6 @@ void neopixels::rainbow(
     const uint16_t hue_step_size,
     const uint16_t phase_offset,
     const uint8_t white,
-    const directions direction,
     const uint8_t saturation,
     const uint8_t value
 ) {
@@ -334,7 +323,10 @@ void neopixels::rainbow(
         // Fill each LED with its colour
         for (uint8_t n = 0; n < n_leds; ++n) {
             // Combine base hue with LED offsets and any baseline white
-            const uint16_t hue = base_hue + n * phase_offset;
+            // Note that offsets going backwards in hue make it look like the
+            // effect is moving forwards in space (think of the rollers on a
+            // treadmill).
+            const uint16_t hue = base_hue - n * phase_offset;
             const uint32_t colour = strip.gamma32(
                 strip.ColorHSV(hue, saturation, value)
                 | (static_cast<uint32_t>(white) << 24)  // See definition of `strip.Color()`
@@ -345,25 +337,10 @@ void neopixels::rainbow(
         strip.show();
 
         // Now take a small step along the hue axis for next time
-        // Can go either way. While we could have passed in the step size as a
-        // signed integer, this is potenitally dangerous to be trying to do
-        // signed arithmetic when we are near UINT_MAX. Hence the more explicit
-        // approach.
-        //base_hue += hue_step_size;
-        switch (direction) {
-            case directions::FORWARDS : {
-                base_hue += hue_step_size;
-                break;
-            }
-            case directions::BACKWARDS : {
-                base_hue -= hue_step_size;
-                break;
-            }
-            default : {
-                // Oops!
-                return;
-            }
-        }
+        // While we could have passed in the step size as a signed integer to
+        // allow reverse cycles, this is potentially dangerous to be trying to
+        // do signed arithmetic when we are near UINT_MAX.
+        base_hue += hue_step_size;
         // While we could have done this as an explicit loop through hues,
         // it doesn't give us any more control
         //for (uint16_t base_hue = 0; base_hue <= UINT16_MAX; ++base_hue) {
