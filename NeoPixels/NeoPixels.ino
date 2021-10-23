@@ -476,9 +476,13 @@ void neopixels::chasing_dots(
 
     // Cache how much fading to apply
     // `n_fade = 2` gives: | 1 | 2/3 | 1/3 | 0 | ...
-    uint8_t intensities[n_fade];
-    for (uint8_t n_f = 0; n_f < n_fade; n_f++) {
-        intensities[n_f] = (n_fade - n_f) * (UINT8_MAX / (n_fade + 1));
+    uint32_t colours[n_fade + 1];
+    for (uint8_t n_f = 0; n_f <= n_fade; ++n_f) {
+        const uint8_t intensity =
+            (n_fade + 1 - n_f) * (UINT8_MAX / (n_fade + 1));
+        colours[n_f] = neopixels::strip.gamma32(
+            neopixels::strip.Color(0, 0, 0, intensity)
+        );
     }
 
     // Loop indefinitely until switch changes
@@ -500,22 +504,12 @@ void neopixels::chasing_dots(
                 // next one
                 if (t > (n_leds + offset + n_fade)) {continue;}
 
-                // Place the dot itself
-                // Again, need to make sure it is visible (may only be tail left)
-                if (t <= (offset + n_leds)) {
-                    const uint32_t colour = neopixels::strip.gamma32(
-                        neopixels::strip.Color(0, 0, 0, UINT8_MAX)
-                    );
-                    strip.setPixelColor(t - offset, colour);
-                }
-
-                // Add fade strip
-                for (uint8_t n_f = 0; n_f < n_fade; n_f++) {
-                    if (t <= (offset + n_f + 1 + n_leds)) {
-                        const uint32_t colour = neopixels::strip.gamma32(
-                            neopixels::strip.Color(0, 0, 0, intensities[n_f])
-                        );
-                        strip.setPixelColor(t - offset - n_f - 1, colour);
+                // Place the dot itself and fade strip
+                for (uint8_t n_f = 0; n_f <= n_fade; ++n_f) {
+                    // Need to make sure everything is visible (i.e. may be in
+                    // the process of appearing or disappearing)
+                    if (t <= (offset + n_f + n_leds)) {
+                        strip.setPixelColor(t - offset - n_f, colours[n_f]);
                     }
                 }
             }
