@@ -53,15 +53,17 @@ namespace mode_switch {
     constexpr uint8_t n_stops = 8;
 }
 
+// Different lighting modes
+// Note that they will appear in this order!
 enum class modes: uint8_t {
     BRIGHT_WHITE,
-    DIM_WHITE,
     PASTEL_RAINBOW,
     ROLLING_RAINBOW,
     ROLLING_RAINBOW_RING,
     CHASING_DOTS,
     PULSING_COLOURS,
     RANDOM,
+    DIM_WHITE,
     // -----
     ERROR
 };
@@ -160,7 +162,7 @@ void loop() {
         // --------------------------------------------------------------------
         case modes::DIM_WHITE : {
             const uint32_t colour = neopixels::strip.gamma32(
-                neopixels::strip.Color(0, 0, 0, UINT8_MAX / 2)
+                neopixels::strip.Color(0, 0, 0, UINT8_MAX / 4)
             );
             neopixels::constant_colour(colour);
             break;
