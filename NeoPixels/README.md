@@ -42,17 +42,25 @@ resistor.
 
 ### Gallery
 
+<p align="middle">
 <img src="images/door_closed.jpg" width="45%">
 <img src="images/door_open.jpg" width="45%">
+</p>
 
+<p align="middle">
 <img src="images/case_light.jpg" width="45%">
 <img src="images/circuit.jpg" width="45%">
+</p>
 
+<p align="middle">
 <img src="images/neopixel_cases.jpg" width="45%">
 <img src="images/neopixel_wiring.jpg" width="45%">
+</p>
 
+<p align="middle">
 <img src="images/controls.jpg" width="45%">
 <img src="images/rotary_switch.jpg" width="45%">
+</p>
 
 ----------
 
